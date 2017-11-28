@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Use correct character set. -->
+<meta charset="utf-8">
+<!-- Tell IE to use the latest, best version. -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+<title>Hello (Cesium) World!</title>
+
+<script src="https://cesiumjs.org/releases/1.39/Build/Cesium/Cesium.js"></script>
+<script src="https://cesiumjs.org/releases/1.39/Apps/Sandcastle/Sandcastle-header.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cesiumjs.org/releases/1.38/Build/Cesium/Widgets/widgets.css"/>
+
+<style>
+  html, body, #cesiumContainer {
+	  width: 800px; height: 600px; margin: 0; padding: 0; overflow: hidden;
+  }
+  
+</style>
+
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+
+	  var SPACE_BAR = 32;
+	  var viewer = new Cesium.Viewer('cesiumContainer'); 
+
+	  var dataSource = Cesium.CzmlDataSource.load("data.czml");
+
+	  viewer.dataSources.add(dataSource); 
+	  var sat;
+  
+
+  
+/*  
+  var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+  handler.setInputAction(function(click) {
+  	var pickedObject = viewer.scene.pick(click.position);
+
+  	if(Cesium.defined(pickedObject)){
+  		var czmlSatId = pickedObject.id._id;
+
+  		var entities = viewer.dataSources.get(0).entities;
+  		sat = entities.getById(czmlSatId);
+  		
+  	}
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+*/
+
+  setTimeout(function(){
+  		var entities = viewer.dataSources.get(0).entities;
+  		sat = entities.getById("Satellite/ISS (ZARYA)");
+  }, 1000); 
+
+
+	
+	document.addEventListener('keypress', function(e) {
+		if (e.keyCode == SPACE_BAR){	
+
+			var intervalID;
+			var count = 1;			
+			var position = sat.position.getValue(viewer.clock.currentTime);		
+			var originalCarto = Cesium.Cartographic.fromCartesian(position);
+			console.log("Original Location:");
+			console.log(originalCarto)
+
+
+
+			var point = drawPoint(position);
+
+			intervalID = setInterval(function(){
+
+				viewer.entities.remove(point)
+				console.log("Falling " + count);
+
+				var height = originalCarto.height - (1000 * 10 * count)
+
+				if(height < 12000){
+					height = 100;
+				}
+												
+				var newCartesian = Cesium.Cartesian3.fromDegrees(Cesium.Math.toDegrees(originalCarto.longitude), Cesium.Math.toDegrees(originalCarto.latitude), height);
+				point = drawPoint(newCartesian);
+
+				count++;
+				if(height == 100){
+					clearInterval(intervalID);
+				}
+			}, 100);
+		}else{
+			console.log(e.keyCode + " pressed");			
+		}
+	}, false);
+
+
+	function drawPoint(position){
+		//console.log("p")
+		//console.log("Drawing point")
+		console.log(position)
+		var p = viewer.entities.add({
+			position: position,
+			point: {
+				pixelSize:15,
+				color: Cesium.Color.RED
+			}
+		});		
+		return p;
+	}
+  
+</script>
+</body>
+</html>
