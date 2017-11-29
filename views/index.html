@@ -14,10 +14,9 @@
 <link rel="stylesheet" type="text/css" href="https://cesiumjs.org/releases/1.38/Build/Cesium/Widgets/widgets.css"/>
 
 <style>
-  html, body, #cesiumContainer {
-	  width: 800px; height: 600px; margin: 0; padding: 0; overflow: hidden;
-  }
-  
+	html, body, #cesiumContainer {
+		width: 800px; height: 600px; margin: 0; padding: 0; overflow: hidden;
+  	}
 </style>
 
 </head>
@@ -25,39 +24,36 @@
 <div id="cesiumContainer"></div>
 <script>
 
-	  var SPACE_BAR = 32;
-	  var viewer = new Cesium.Viewer('cesiumContainer'); 
+	var SPACE_BAR = 32;
+	var viewer = new Cesium.Viewer('cesiumContainer'); 
 
-	  var dataSource = Cesium.CzmlDataSource.load("data.czml");
+	var dataSource = Cesium.CzmlDataSource.load("data.czml");
 
-	  viewer.dataSources.add(dataSource); 
-	  var sat;
+	viewer.dataSources.add(dataSource); 
+	var sat;
   
+	/*  
+	var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
-  
-/*  
-  var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+	handler.setInputAction(function(click) {
+		var pickedObject = viewer.scene.pick(click.position);
 
-  handler.setInputAction(function(click) {
-  	var pickedObject = viewer.scene.pick(click.position);
+		if(Cesium.defined(pickedObject)){
+			var czmlSatId = pickedObject.id._id;
 
-  	if(Cesium.defined(pickedObject)){
-  		var czmlSatId = pickedObject.id._id;
+			var entities = viewer.dataSources.get(0).entities;
+			sat = entities.getById(czmlSatId);
+			
+		}
+	}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+	*/
 
-  		var entities = viewer.dataSources.get(0).entities;
-  		sat = entities.getById(czmlSatId);
-  		
-  	}
-  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-*/
-
-  setTimeout(function(){
-  		var entities = viewer.dataSources.get(0).entities;
-  		sat = entities.getById("Satellite/ISS (ZARYA)");
-  }, 1000); 
-
-
+	setTimeout(function(){
+		var entities = viewer.dataSources.get(0).entities;
+		sat = entities.getById("Satellite/ISS (ZARYA)");
+	}, 1000); 
 	
+
 	document.addEventListener('keypress', function(e) {
 		if (e.keyCode == SPACE_BAR){	
 
@@ -65,17 +61,11 @@
 			var count = 1;			
 			var position = sat.position.getValue(viewer.clock.currentTime);		
 			var originalCarto = Cesium.Cartographic.fromCartesian(position);
-			console.log("Original Location:");
-			console.log(originalCarto)
-
-
 
 			var point = drawPoint(position);
 
 			intervalID = setInterval(function(){
-
 				viewer.entities.remove(point)
-				console.log("Falling " + count);
 
 				var height = originalCarto.height - (1000 * 10 * count)
 
@@ -98,8 +88,6 @@
 
 
 	function drawPoint(position){
-		//console.log("p")
-		//console.log("Drawing point")
 		console.log(position)
 		var p = viewer.entities.add({
 			position: position,
