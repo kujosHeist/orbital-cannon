@@ -25,7 +25,14 @@
 <script>
 
 	var SPACE_BAR = 32;
-	var viewer = new Cesium.Viewer('cesiumContainer'); 
+	var LEFT_ARROW = 37;
+	var UP_ARROW = 38;
+	var RIGHT_ARROW = 39;
+	var DOWN_ARROW = 40;
+	var SHIFT_KEY = 16;
+
+	var viewer = new Cesium.Viewer('cesiumContainer');
+	var sphereRadius = 1000.0 * 30;
 
 	var dataSource = Cesium.CzmlDataSource.load("data.czml");
 
@@ -48,47 +55,105 @@
 	}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 	*/
 
+
+
+	
+
 	setTimeout(function(){
 		var entities = viewer.dataSources.get(0).entities;
 		sat = entities.getById("Satellite/ISS (ZARYA)");
+
+		var satelliteCartesian = sat.position.getValue(viewer.clock.currentTime);
+		var satelliteCarto = Cesium.Cartographic.fromCartesian(satelliteCartesian);
+
+		var height = 500;
+		var groundCartesian = getCartesianAtHeight(satelliteCarto, height);
+
+		//drawPoint(groundCartesian);
+		drawSphere(groundCartesian, sphereRadius)
+		//viewer.zoomTo(viewer.entities);
+
 	}, 1000); 
 	
 
-	document.addEventListener('keypress', function(e) {
-		if (e.keyCode == SPACE_BAR){	
+	
+	document.addEventListener('keydown', keyDown, false);
 
-			var intervalID;
-			var count = 1;			
-			var position = sat.position.getValue(viewer.clock.currentTime);		
-			var originalCarto = Cesium.Cartographic.fromCartesian(position);
+	
 
-			var point = drawPoint(position);
+	function keyDown(e) {
 
-			intervalID = setInterval(function(){
-				viewer.entities.remove(point)
+		switch(e.keyCode){
+			case UP_ARROW:
+				viewer.camera.moveForward(1000 * 10);
+				break;
 
-				var height = originalCarto.height - (1000 * 10 * count)
+			case DOWN_ARROW:
+				viewer.camera.moveBackward(1000 * 10);
+				break;	
 
-				if(height < 12000){
-					height = 100;
-				}
-												
-				var newCartesian = Cesium.Cartesian3.fromDegrees(Cesium.Math.toDegrees(originalCarto.longitude), Cesium.Math.toDegrees(originalCarto.latitude), height);
-				point = drawPoint(newCartesian);
+			case LEFT_ARROW:
+				viewer.camera.moveLeft(1000 * 10)
+				break;	
 
-				count++;
-				if(height == 100){
-					clearInterval(intervalID);
-				}
-			}, 100);
-		}else{
-			console.log(e.keyCode + " pressed");			
+			case RIGHT_ARROW:
+				viewer.camera.moveRight(1000 * 10)
+				break;		
+
+			case SPACE_BAR:
+				var ray = new Cesium.Ray(viewer.camera.position, viewer.camera.direction);
+				var cartesian = Cesium.Ray.getPoint(ray, 1000.0 * 1000)
+				//drawSphere(cartesian, sphereRadius);
+
+				dropSphere(cartesian)				
+				break;								
+
+			default:
+				console.log("keydown: " + e.keyCode);
 		}
-	}, false);
 
+		
+	}
+
+
+	function dropSphere(cartesian) {
+		
+		var intervalID;
+		var count = 1;			
+			
+		var originalCarto = Cesium.Cartographic.fromCartesian(cartesian);
+
+		var point = drawSphere(cartesian, sphereRadius);
+
+		intervalID = setInterval(function(){
+			viewer.entities.remove(point)
+
+			var height = originalCarto.height - (250 * 1000 * count)
+
+			if(height < 12000){
+				height = 100;
+			}
+						
+			var newCartesian = getCartesianAtHeight(originalCarto, height);
+
+			point = drawSphere(newCartesian, sphereRadius);
+
+			count++;
+			if(height == 100){
+				clearInterval(intervalID);
+			}
+		}, 250);
+	}
+
+	function getCartesianAtHeight(cartographic, height){
+		var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+		var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+		return Cesium.Cartesian3.fromDegrees(longitude, latitude, height);
+
+	}
 
 	function drawPoint(position){
-		console.log(position)
 		var p = viewer.entities.add({
 			position: position,
 			point: {
@@ -98,7 +163,17 @@
 		});		
 		return p;
 	}
-  
+
+	function drawSphere(position, radius) {
+		var redSphere = viewer.entities.add({
+			position: position,
+			ellipsoid: {
+				radii: new Cesium.Cartesian3(radius, radius, radius),
+				material : Cesium.Color.RED
+			}
+		});	
+		return redSphere;
+  	}
 </script>
 </body>
 </html>
