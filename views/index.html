@@ -68,11 +68,6 @@
 
 		var height = 500;
 		var groundCartesian = getCartesianAtHeight(satelliteCarto, height);
-
-		//drawPoint(groundCartesian);
-		drawSphere(groundCartesian, sphereRadius)
-		//viewer.zoomTo(viewer.entities);
-
 	}, 1000); 
 	
 
@@ -102,44 +97,32 @@
 
 			case SPACE_BAR:
 				var ray = new Cesium.Ray(viewer.camera.position, viewer.camera.direction);
-				var cartesian = Cesium.Ray.getPoint(ray, 1000.0 * 1000)
-				//drawSphere(cartesian, sphereRadius);
+				var cartesian = Cesium.Ray.getPoint(ray, 500.0 * 1000);
 
-				dropSphere(cartesian)				
+				dropSphere(cartesian, ray);
 				break;								
 
 			default:
 				console.log("keydown: " + e.keyCode);
 		}
-
-		
 	}
 
 
-	function dropSphere(cartesian) {
+	function dropSphere(cartesian, ray) {
 		
 		var intervalID;
 		var count = 1;			
-			
-		var originalCarto = Cesium.Cartographic.fromCartesian(cartesian);
 
-		var point = drawSphere(cartesian, sphereRadius);
+		var sphere = drawSphere(cartesian, sphereRadius);
 
 		intervalID = setInterval(function(){
-			viewer.entities.remove(point)
 
-			var height = originalCarto.height - (250 * 1000 * count)
-
-			if(height < 12000){
-				height = 100;
-			}
-						
-			var newCartesian = getCartesianAtHeight(originalCarto, height);
-
-			point = drawSphere(newCartesian, sphereRadius);
+			newCartesian = Cesium.Ray.getPoint(ray, (250.0 * 1000 * count));
+					
+			sphere.position = newCartesian;
 
 			count++;
-			if(height == 100){
+			if(count > 200){
 				clearInterval(intervalID);
 			}
 		}, 250);
