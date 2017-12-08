@@ -11,7 +11,7 @@
 
 <script src="https://cesiumjs.org/releases/1.39/Build/Cesium/Cesium.js"></script>
 <script src="https://cesiumjs.org/releases/1.39/Apps/Sandcastle/Sandcastle-header.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cesiumjs.org/releases/1.38/Build/Cesium/Widgets/widgets.css"/>
+<link rel="stylesheet" type="text/css" href="https://cesiumjs.org/releases/1.39/Build/Cesium/Widgets/widgets.css"/>
 
 <style>
 	html, body, #cesiumContainer {
@@ -38,43 +38,14 @@
 
 	viewer.dataSources.add(dataSource); 
 	var sat;
-  
-	/*  
-	var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
-	handler.setInputAction(function(click) {
-		var pickedObject = viewer.scene.pick(click.position);
-
-		if(Cesium.defined(pickedObject)){
-			var czmlSatId = pickedObject.id._id;
-
-			var entities = viewer.dataSources.get(0).entities;
-			sat = entities.getById(czmlSatId);
-			
-		}
-	}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-	*/
+	// move camera closer to the earth
+	var cameraCarto = Cesium.Cartographic.fromCartesian(viewer.camera.position);
+	var newCart = getCartesianAtHeight(cameraCarto, 10000.0 * 1000.0);
+	viewer.camera.position = newCart;  
 
 
-
-	
-
-	setTimeout(function(){
-		var entities = viewer.dataSources.get(0).entities;
-		sat = entities.getById("Satellite/ISS (ZARYA)");
-
-		var satelliteCartesian = sat.position.getValue(viewer.clock.currentTime);
-		var satelliteCarto = Cesium.Cartographic.fromCartesian(satelliteCartesian);
-
-		var height = 500;
-		var groundCartesian = getCartesianAtHeight(satelliteCarto, height);
-	}, 1000); 
-	
-
-	
 	document.addEventListener('keydown', keyDown, false);
-
-	
 
 	function keyDown(e) {
 
@@ -96,10 +67,11 @@
 				break;		
 
 			case SPACE_BAR:
-				var ray = new Cesium.Ray(viewer.camera.position, viewer.camera.direction);
-				var cartesian = Cesium.Ray.getPoint(ray, 500.0 * 1000);
+				var cameraCartesian = viewer.camera.position;
+				var ray = new Cesium.Ray(cameraCartesian, viewer.camera.direction);
 
-				dropSphere(cartesian, ray);
+				var increment = 250.0 * 1000.0;
+				dropSphere(cameraCartesian, ray, increment);
 				break;								
 
 			default:
@@ -107,22 +79,33 @@
 		}
 	}
 
+  	// store a reference to the satellite, need timeout to allow for czml data source to be loaded
+	setTimeout(function(){
+		var entities = viewer.dataSources.get(0).entities;
+		sat = entities.getById("Satellite/ISS (ZARYA)");
 
-	function dropSphere(cartesian, ray) {
+		var satelliteCartesian = sat.position.getValue(viewer.clock.currentTime);
+		var satelliteCarto = Cesium.Cartographic.fromCartesian(satelliteCartesian);
+	}, 1000); 	
+
+	// draw sphere moving from a location, following direction specified by ray
+	function dropSphere(cartesian, ray, increment) {
 		
 		var intervalID;
 		var count = 1;			
 
 		var sphere = drawSphere(cartesian, sphereRadius);
 
-		intervalID = setInterval(function(){
+		var height = Cesium.Cartographic.fromCartesian(cartesian).height;
+		var totalSteps = Math.floor(height/increment);
 
-			newCartesian = Cesium.Ray.getPoint(ray, (250.0 * 1000 * count));
-					
+		intervalID = setInterval(function(){
+			newCartesian = Cesium.Ray.getPoint(ray, (increment * count));
 			sphere.position = newCartesian;
 
 			count++;
-			if(count > 200){
+			if(count > totalSteps){
+				console.log("Sphere stopped");	
 				clearInterval(intervalID);
 			}
 		}, 250);
@@ -157,6 +140,22 @@
 		});	
 		return redSphere;
   	}
+
+	function handleClickOnGlobeExample(){
+		var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+		handler.setInputAction(function(click) {
+
+			// example of getting a reference to a satellite by clicking on it
+			var pickedObject = viewer.scene.pick(click.position);
+
+			if(Cesium.defined(pickedObject)){
+				var czmlSatId = pickedObject.id._id;
+				var entities = viewer.dataSources.get(0).entities;
+				sat = entities.getById(czmlSatId);
+			}
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+	}  	
 </script>
 </body>
 </html>
