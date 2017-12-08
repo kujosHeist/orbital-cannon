@@ -40,10 +40,11 @@
 	var sat;
 
 	// move camera closer to the earth
+	/*
 	var cameraCarto = Cesium.Cartographic.fromCartesian(viewer.camera.position);
 	var newCart = getCartesianAtHeight(cameraCarto, 10000.0 * 1000.0);
 	viewer.camera.position = newCart;  
-
+	*/
 
 	document.addEventListener('keydown', keyDown, false);
 
@@ -86,28 +87,51 @@
 
 		var satelliteCartesian = sat.position.getValue(viewer.clock.currentTime);
 		var satelliteCarto = Cesium.Cartographic.fromCartesian(satelliteCartesian);
+		
+
+		// set camera to be above satellite
+		var newCart = getCartesianAtHeight(satelliteCarto, satelliteCarto.height * 20.0);
+		var newDirection = new Cesium.Cartesian3()
+		newDirection = Cesium.Cartesian3.subtract(satelliteCartesian, newCart, newDirection);
+
+		viewer.camera.position = newCart;  
+		viewer.camera.direction = newDirection;  
+				
 	}, 1000); 	
 
 	// draw sphere moving from a location, following direction specified by ray
 	function dropSphere(cartesian, ray, increment) {
 		
 		var intervalID;
-		var count = 1;			
+		var count = 1;	
+
 
 		var sphere = drawSphere(cartesian, sphereRadius);
 
 		var height = Cesium.Cartographic.fromCartesian(cartesian).height;
 		var totalSteps = Math.floor(height/increment);
+		var sphereCartesian;
+
 
 		intervalID = setInterval(function(){
-			newCartesian = Cesium.Ray.getPoint(ray, (increment * count));
-			sphere.position = newCartesian;
+			sphereCartesian = Cesium.Ray.getPoint(ray, (increment * count));
+			sphere.position = sphereCartesian;
+
+			var satCartesian = sat.position.getValue(viewer.clock.currentTime);
+
+			var distance = Cesium.Cartesian3.distance(satCartesian, sphereCartesian);
+			if(distance < increment){
+				clearInterval(intervalID);
+				console.log("Sphere Impact!!!");
+			} 
 
 			count++;
-			if(count > totalSteps){
+			if(count > totalSteps + 1){
 				console.log("Sphere stopped");	
 				clearInterval(intervalID);
 			}
+
+
 		}, 250);
 	}
 
